@@ -1,47 +1,23 @@
-const express = require('express');
-const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
-const { LLama } = require('@llama-node/llama-cpp');
-const { LLamaCpp } = require('@llama-node/core');
+import express from 'express';
+import pkg from 'whatsapp-web.js';
+const { Client, LocalAuth } = pkg;
+import qrcode from 'qrcode-terminal';
+import ollama from 'ollama';
 
 const app = express();
 app.use(express.json());
 
 // Configuration
 const TARGET_NUMBER = '555193309135'; // Replace with your target number
-const MODEL_PATH = './models/deepseek-coder-6.7b-instruct.Q5_K_M.gguf'; // Path to your LLAMA model
-
-// Initialize LLAMA
-const llama = new LLama(LLamaCpp);
-const llmConfig = {
-    modelPath: MODEL_PATH,
-    enableLogging: true,
-    nCtx: 1024,
-    seed: 0,
-    f16Kv: false,
-    logitsAll: false,
-    vocabOnly: false,
-    useMlock: false,
-    embedding: false,
-    useMmap: true,
-};
-
-// Initialize LLAMA
-async function initializeLLAMA() {
-    try {
-        await llama.load(llmConfig);
-        console.log('LLAMA model loaded successfully');
-    } catch (error) {
-        console.error('Error loading LLAMA model:', error);
-    }
-}
 
 // Create a new WhatsApp client
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
-        args: ['--no-sandbox']
-    }
+        executablePath: '/snap/bin/chromium',   // ou /usr/bin/google-chrome
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    },
 });
 
 // Generate QR Code
@@ -53,7 +29,6 @@ client.on('qr', (qr) => {
 // When client is ready
 client.on('ready', () => {
     console.log('Client is ready!');
-    initializeLLAMA();
 });
 
 // Message listener
@@ -64,18 +39,17 @@ client.on('message', async (message) => {
         if (senderNumber === TARGET_NUMBER) {
             console.log('Received message from target number:', message.body);
 
-            // Generate response using LLAMA
-            const prompt = `Human: ${message.body}\nAssistant:`;
-            const response = await llama.createCompletion({
-                prompt,
-                maxTokens: 200,
-                temperature: 0.7,
-                topP: 0.9,
-                stop: ['Human:', '\n\n'],
+            // Generate response using Ollama
+            const response = await ollama.chat({
+                model: 'llama3',
+                messages: [
+                    { role: 'system', content: 'You are a helpful AI assistant. Please provide clear and concise responses.' },
+                    { role: 'user', content: message.body }
+                ],
             });
 
             // Send the response back
-            await message.reply(response.text.trim());
+            await message.reply(response.message.content);
         }
     } catch (error) {
         console.error('Error processing message:', error);

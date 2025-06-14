@@ -2,9 +2,11 @@
   "name": "whatsapp-api",
   "version": "1.0.0",
   "description": "WhatsApp API using whatsapp-web.js",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "node indiano.js"
   },
   "repository": {
     "type": "git",
@@ -23,9 +25,10 @@
   "homepage": "https://github.com/lucassaraiva5/ai-wpp-example#readme",
   "dependencies": {
     "express": "^4.18.2",
-    "whatsapp-web.js": "^1.23.0",
+    "ollama": "^0.5.16",
+    "puppeteer": "^24.10.1",
+    "puppeteer-core": "^24.10.1",
     "qrcode-terminal": "^0.12.0",
-    "@llama-node/llama-cpp": "^0.1.0",
-    "@llama-node/core": "^0.1.0"
+    "whatsapp-web.js": "^1.23.0"
   }
 }
