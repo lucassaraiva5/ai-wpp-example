@@ -24,6 +24,8 @@
   "dependencies": {
     "express": "^4.18.2",
     "whatsapp-web.js": "^1.23.0",
-    "qrcode-terminal": "^0.12.0"
+    "qrcode-terminal": "^0.12.0",
+    "@llama-node/llama-cpp": "^0.1.0",
+    "@llama-node/core": "^0.1.0"
   }
 }

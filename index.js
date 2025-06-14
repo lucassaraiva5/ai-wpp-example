@@ -1,9 +1,40 @@
 const express = require('express');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
+const { LLama } = require('@llama-node/llama-cpp');
+const { LLamaCpp } = require('@llama-node/core');
 
 const app = express();
 app.use(express.json());
+
+// Configuration
+const TARGET_NUMBER = '555193309135'; // Replace with your target number
+const MODEL_PATH = './models/deepseek-coder-6.7b-instruct.Q5_K_M.gguf'; // Path to your LLAMA model
+
+// Initialize LLAMA
+const llama = new LLama(LLamaCpp);
+const llmConfig = {
+    modelPath: MODEL_PATH,
+    enableLogging: true,
+    nCtx: 1024,
+    seed: 0,
+    f16Kv: false,
+    logitsAll: false,
+    vocabOnly: false,
+    useMlock: false,
+    embedding: false,
+    useMmap: true,
+};
+
+// Initialize LLAMA
+async function initializeLLAMA() {
+    try {
+        await llama.load(llmConfig);
+        console.log('LLAMA model loaded successfully');
+    } catch (error) {
+        console.error('Error loading LLAMA model:', error);
+    }
+}
 
 // Create a new WhatsApp client
 const client = new Client({
@@ -22,6 +53,33 @@ client.on('qr', (qr) => {
 // When client is ready
 client.on('ready', () => {
     console.log('Client is ready!');
+    initializeLLAMA();
+});
+
+// Message listener
+client.on('message', async (message) => {
+    try {
+        // Check if the message is from the target number
+        const senderNumber = message.from.split('@')[0];
+        if (senderNumber === TARGET_NUMBER) {
+            console.log('Received message from target number:', message.body);
+
+            // Generate response using LLAMA
+            const prompt = `Human: ${message.body}\nAssistant:`;
+            const response = await llama.createCompletion({
+                prompt,
+                maxTokens: 200,
+                temperature: 0.7,
+                topP: 0.9,
+                stop: ['Human:', '\n\n'],
+            });
+
+            // Send the response back
+            await message.reply(response.text.trim());
+        }
+    } catch (error) {
+        console.error('Error processing message:', error);
+    }
 });
 
 // Initialize the client
